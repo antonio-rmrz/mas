@@ -311,12 +311,14 @@ class MasSearchAndFilters extends LitElement {
                     const path = (fragment.path || '').toLowerCase();
                     const productTag = fragment.tags?.find(({ id }) => id?.startsWith('mas:product_code/'))?.title || '';
                     const offerId = fragment.offerData?.offerId || '';
+                    const cardTitle = fragment.fields?.find((field) => field.name === 'cardTitle')?.values?.[0] || '';
                     if (
                         !title.includes(query) &&
                         !studioPath.includes(query) &&
                         !path.includes(query) &&
                         !productTag.toLowerCase().includes(query) &&
-                        !offerId.toLowerCase().includes(query)
+                        !offerId.toLowerCase().includes(query) &&
+                        !cardTitle.toLowerCase().includes(query)
                     ) {
                         return false;
                     }

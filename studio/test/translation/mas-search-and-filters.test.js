@@ -472,6 +472,57 @@ describe('MasSearchAndFilters', () => {
             expect(result.length).to.equal(1);
             expect(result[0].key).to.equal('cta-promo');
         });
+
+        it('should filter cards by cardTitle field', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({
+                    title: 'Internal Title 1',
+                    fields: [{ name: 'cardTitle', values: ['Firefly Pro'] }],
+                }),
+                createMockFragment({
+                    title: 'Internal Title 2',
+                    fields: [{ name: 'cardTitle', values: ['Photoshop'] }],
+                }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards"></mas-search-and-filters>`);
+            el.searchQuery = 'Firefly';
+            await el.updateComplete;
+            const result = Store.translationProjects.displayCards.get();
+            expect(result.length).to.equal(1);
+            expect(result[0].fields.find((f) => f.name === 'cardTitle').values[0]).to.equal('Firefly Pro');
+        });
+
+        it('should filter cards by cardTitle case-insensitively', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({
+                    title: 'Internal Title',
+                    fields: [{ name: 'cardTitle', values: ['Adobe Creative Cloud'] }],
+                }),
+                createMockFragment({
+                    title: 'Another Title',
+                    fields: [{ name: 'cardTitle', values: ['Something Else'] }],
+                }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards"></mas-search-and-filters>`);
+            el.searchQuery = 'creative';
+            await el.updateComplete;
+            const result = Store.translationProjects.displayCards.get();
+            expect(result.length).to.equal(1);
+            expect(result[0].fields.find((f) => f.name === 'cardTitle').values[0]).to.equal('Adobe Creative Cloud');
+        });
+
+        it('should handle fragments without cardTitle field gracefully', async () => {
+            Store.translationProjects.allCards.set([
+                createMockFragment({ title: 'Photoshop card', fields: [] }),
+                createMockFragment({ title: 'Another card', fields: [{ name: 'variant', values: ['plans'] }] }),
+            ]);
+            const el = await fixture(html`<mas-search-and-filters type="cards"></mas-search-and-filters>`);
+            el.searchQuery = 'Photoshop';
+            await el.updateComplete;
+            const result = Store.translationProjects.displayCards.get();
+            expect(result.length).to.equal(1);
+            expect(result[0].title).to.equal('Photoshop card');
+        });
     });
 
     describe('filter extraction', () => {
