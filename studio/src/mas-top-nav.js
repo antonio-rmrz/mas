@@ -217,229 +217,118 @@ class MasTopNav extends LitElement {
                     const confirmed = await editor?.promptDiscardChanges();
                     if (!confirmed) {
                         // Reset the picker to the current locale
-                        this.requestUpdate();
+                        e.target.value = this.topNavLocale;
                         return;
                     }
                 }
-                // Clear the region override and update locale filter before navigating
-                Store.search.set((prev) => ({ ...prev, region: null }));
-                this.filters.set((prev) => ({ ...prev, locale }));
                 router.navigateToFragmentEditor(fragmentId);
-            } else if (fragmentId && fragmentId === currentFragment?.id) {
-                // User selected the same fragment's locale
-                Store.editor.resetChanges();
-                Store.search.set((prev) => ({ ...prev, region: null }));
-                this.filters.set((prev) => ({ ...prev, locale }));
-            } else if (!fragmentId) {
-                // If no translation exists for this locale, show the "missing variation" state.
-                // For grouped variations we're already on the right fragment — just set the region override.
-                // For default fragments, navigate to the en_US variant first.
-                Store.editor.resetChanges();
-                Store.search.set((prev) => ({ ...prev, region: locale }));
-                this.filters.set((prev) => ({ ...prev, locale }));
-                if (!this.editorContext.isGroupedVariationByPath) {
-                    const translatedLocales = Store.fragmentEditor.translatedLocales.get();
-                    const enUsTranslation = translatedLocales?.find((t) => t.locale === 'en_US');
-                    const enUsFragmentId = enUsTranslation?.id || currentFragment?.id;
-                    router.navigateToFragmentEditor(enUsFragmentId);
-                }
+                return;
             }
-            return;
         }
-        this.filters.set((prev) => ({ ...prev, locale }));
+        Store.filters.set({ ...Store.filters.value, locale });
     }
 
-    get environmentIndicator() {
-        if (this.aemEnv === 'prod') {
-            return html``;
-        }
-        return html` <sp-badge size="small" variant="${EnvColorCode[this.aemEnv]}"> ${this.aemEnv.toUpperCase()} </sp-badge> `;
+    get headerBackground() {
+        return '#000';
     }
 
-    get settingEditorBreadcrumbLabel() {
-        return this.settings.creating.get() ? 'Create new setting' : 'Edit setting';
+    get envColorCode() {
+        return EnvColorCode[this.aemEnv] ?? '';
     }
 
-    get promotionsEditorBreadcrumbLabel() {
-        return this.promotions.promotionId.get() ? 'Edit project' : 'Create new project';
-    }
-
-    get translationEditorBreadcrumbLabel() {
-        if (!this.translationProjects.translationProjectId.get()) return 'Create new project';
-        const project = this.translationProjects.inEdit.get()?.get();
-        if (project?.getFieldValue('submissionDate')) return 'Translation Project';
-        return 'Edit project';
-    }
-
-    get bulkPublishEditorBreadcrumbLabel() {
-        const inEdit = this.bulkPublishProjects.inEdit.get();
-        const project = typeof inEdit?.get === 'function' ? inEdit.get() : inEdit;
-        const title = project?.getFieldValue?.('title');
-        if (title) return title;
-        return this.bulkPublishProjects.projectId.get() ? 'Edit project' : 'Create project';
-    }
-
-    get breadcrumbItems() {
-        const handlers = {
-            content: () => router.navigateToPage(PAGE_NAMES.CONTENT)(),
-            settings: () => router.navigateToPage(PAGE_NAMES.SETTINGS)(),
-            promotions: () => router.navigateToPage(PAGE_NAMES.PROMOTIONS)(),
-            translations: () => router.navigateToPage(PAGE_NAMES.TRANSLATIONS)(),
-            editor: () => {
-                const fragmentId = this.version.fragmentId.get();
-                if (!fragmentId) return;
-                router.navigateToFragmentEditor(fragmentId);
-            },
-        };
-
-        if (this.page.value === PAGE_NAMES.FRAGMENT_EDITOR) {
-            return [{ label: 'Fragments', handler: handlers.content }, { label: 'Editor' }];
+    get breadcrumbs() {
+        if (this.isFragmentEditorPage) {
+            return html`<sp-breadcrumbs class="nav-breadcrumbs">
+                <sp-breadcrumb-item @click=${() => router.navigateToPage(PAGE_NAMES.CONTENT)}>Fragments</sp-breadcrumb-item>
+                <sp-breadcrumb-item>Editor</sp-breadcrumb-item>
+            </sp-breadcrumbs>`;
         }
         if (this.page.value === PAGE_NAMES.VERSION) {
-            return [
-                { label: 'Fragments', handler: handlers.content },
-                { label: 'Editor', handler: handlers.editor },
-                { label: 'Version history' },
-            ];
+            const fragmentId = this.version.fragmentId.value;
+            return html`<sp-breadcrumbs class="nav-breadcrumbs">
+                <sp-breadcrumb-item @click=${() => router.navigateToPage(PAGE_NAMES.CONTENT)}>Fragments</sp-breadcrumb-item>
+                <sp-breadcrumb-item @click=${() => fragmentId && router.navigateToFragmentEditor(fragmentId)}>Editor</sp-breadcrumb-item>
+                <sp-breadcrumb-item>Version history</sp-breadcrumb-item>
+            </sp-breadcrumbs>`;
         }
-        if (this.page.value === PAGE_NAMES.SETTINGS) {
-            return [
-                { label: 'Advanced tools', handler: () => router.navigateToPage(PAGE_NAMES.ADVANCED_TOOLS)() },
-                { label: 'Global settings' },
-            ];
+        if (this.isSettingsEditorPage) {
+            const fragmentId = this.settings.fragmentId.value;
+            const creating = this.settings.creating.value;
+            if (!fragmentId && !creating) return nothing;
+            const label = creating ? 'Create new setting' : 'Edit setting';
+            return html`<sp-breadcrumbs class="nav-breadcrumbs">
+                <sp-breadcrumb-item @click=${() => router.navigateToPage(PAGE_NAMES.SETTINGS)}>Global settings</sp-breadcrumb-item>
+                <sp-breadcrumb-item>${label}</sp-breadcrumb-item>
+            </sp-breadcrumbs>`;
         }
-        if (this.page.value === PAGE_NAMES.SETTINGS_EDITOR) {
-            if (!this.settings.fragmentId.get() && !this.settings.creating.get()) {
-                return [];
-            }
-            return [{ label: 'Global settings', handler: handlers.settings }, { label: this.settingEditorBreadcrumbLabel }];
+        if (this.isBulkPublishEditorPage) {
+            const projectId = this.bulkPublishProjects.projectId.value;
+            const inEdit = this.bulkPublishProjects.inEdit.value;
+            if (!projectId && !inEdit) return nothing;
+            const label = inEdit ? 'Edit project' : 'View project';
+            return html`<sp-breadcrumbs class="nav-breadcrumbs">
+                <sp-breadcrumb-item @click=${() => router.navigateToPage(PAGE_NAMES.BULK_PUBLISH)}>Bulk publish</sp-breadcrumb-item>
+                <sp-breadcrumb-item>${label}</sp-breadcrumb-item>
+            </sp-breadcrumbs>`;
         }
-        if (this.page.value === PAGE_NAMES.PROMOTIONS_EDITOR) {
-            return [{ label: 'Promotions', handler: handlers.promotions }, { label: this.promotionsEditorBreadcrumbLabel }];
+        if (this.isTranslationEditorPage) {
+            const projectId = this.translationProjects.translationProjectId.value;
+            const inEdit = this.translationProjects.inEdit.value;
+            if (!projectId && !inEdit) return nothing;
+            const label = inEdit ? 'Edit project' : 'View project';
+            return html`<sp-breadcrumbs class="nav-breadcrumbs">
+                <sp-breadcrumb-item @click=${() => router.navigateToPage(PAGE_NAMES.TRANSLATIONS)}>Translations</sp-breadcrumb-item>
+                <sp-breadcrumb-item>${label}</sp-breadcrumb-item>
+            </sp-breadcrumbs>`;
         }
-        if (this.page.value === PAGE_NAMES.TRANSLATION_EDITOR) {
-            return [
-                { label: 'Translations', handler: handlers.translations },
-                { label: this.translationEditorBreadcrumbLabel },
-            ];
-        }
-        if (this.page.value === PAGE_NAMES.BULK_PUBLISH) {
-            return [
-                { label: 'Advanced tools', handler: () => router.navigateToPage(PAGE_NAMES.ADVANCED_TOOLS)() },
-                { label: 'Bulk publish' },
-            ];
-        }
-        if (this.page.value === PAGE_NAMES.BULK_PUBLISH_EDITOR) {
-            return [
-                { label: 'Bulk publish', handler: () => router.navigateToPage(PAGE_NAMES.BULK_PUBLISH)() },
-                { label: this.bulkPublishEditorBreadcrumbLabel },
-            ];
-        }
-
-        return [];
+        return nothing;
     }
 
-    get breadcrumbsTemplate() {
-        const items = this.breadcrumbItems;
-        if (!items.length) return nothing;
-        const breadcrumbKey = items.map((item) => item.label).join('|');
-        return keyed(
-            breadcrumbKey,
-            html`
-                <div class="nav-breadcrumbs">
-                    <sp-breadcrumbs>
-                        ${items.map(
-                            (item) =>
-                                html`<sp-breadcrumb-item @click=${item.handler || nothing}>${item.label}</sp-breadcrumb-item>`,
-                        )}
-                    </sp-breadcrumbs>
-                </div>
-            `,
-        );
-    }
-
-    get historyNavigationTemplate() {
+    get pickers() {
+        if (!this.shouldShowPickers) return nothing;
         return html`
-            <div class="history-navigation" aria-label="History navigation">
-                <button class="history-nav-button" type="button" aria-label="Back">
-                    <sp-icon-chevron-left size="s"></sp-icon-chevron-left>
-                </button>
-                <button class="history-nav-button" type="button" aria-label="Forward" disabled>
-                    <sp-icon-chevron-right size="s"></sp-icon-chevron-right>
-                </button>
-            </div>
+            <mas-locale-picker
+                .locale=${this.topNavLocale}
+                ?disabled=${this.isLocalePickerDisabled}
+                @locale-changed=${this.onLocaleChanged}
+            ></mas-locale-picker>
+            <mas-nav-folder-picker></mas-nav-folder-picker>
+        `;
+    }
+
+    get landscapeToggle() {
+        if (!this.isContentPage && !this.isFragmentEditorPage) return nothing;
+        return html`
+            <sp-action-group>
+                <sp-action-button
+                    class="landscape-toggle"
+                    ?selected=${!this.isDraftLandscape}
+                    @click=${() => (Store.landscape.value = WCS_LANDSCAPE_PUBLISHED)}
+                    >Published</sp-action-button
+                >
+                <sp-action-button
+                    class="landscape-toggle"
+                    ?selected=${this.isDraftLandscape}
+                    @click=${() => (Store.landscape.value = WCS_LANDSCAPE_DRAFT)}
+                    >Draft</sp-action-button
+                >
+            </sp-action-group>
         `;
     }
 
     render() {
         return html`
-            <nav>
-                <div class="left-section">
-                    <a id="brand" href="#page=welcome">
-                        <svg
-                            id="logo"
-                            aria-label="Adobe"
-                            width="32"
-                            height="32"
-                            viewBox="0 0 32 32"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                            <path
-                                d="M26.3349 0.666667H5.66504C2.53633 0.666667 0 3.18733 0 6.29675V25.7033C0 28.8127 2.53633 31.3333 5.66504 31.3333H26.3349C29.4637 31.3333 32 28.8127 32 25.7033V6.29675C32 3.18733 29.4637 0.666667 26.3349 0.666667Z"
-                                fill="#EB1000"
-                            />
-                            <path
-                                d="M24.7188 23.9036H20.9785C20.6313 23.9036 20.3349 23.7067 20.2113 23.4121L16.1731 14.0141C16.1 13.8439 15.9049 13.8424 15.8304 14.0097L13.2999 20.2949C13.2403 20.4355 13.3441 20.5908 13.4976 20.5908H16.2791C16.4513 20.5908 16.6069 20.6932 16.6741 20.8508L17.8696 23.2123C18.0097 23.5409 17.7669 23.9036 17.4095 23.9036H7.28312C6.95989 23.9036 6.73789 23.5839 6.86155 23.264L13.3249 8.02212C13.45 7.70235 13.7719 7.48178 14.1427 7.48178H17.8577C18.2287 7.48178 18.5519 7.70235 18.6756 8.02212L25.1389 23.264C25.2625 23.5839 25.0407 23.9036 24.7188 23.9036L24.7188 23.9036Z"
-                                fill="white"
-                            />
-                        </svg>
-                        <span id="mas-studio">Merch At Scale Studio</span>
-                        ${this.environmentIndicator}
-                    </a>
-                    ${this.historyNavigationTemplate} ${this.breadcrumbsTemplate}
+            <nav class="top-nav" style="background-color: ${this.headerBackground};">
+                <div class="nav-logo">
+                    <img src="/img/adobe-logo.svg" alt="Adobe" />
+                    <span class="nav-title">MAS Studio</span>
+                    ${this.envColorCode ? html`<span class="env-badge" style="background:${this.envColorCode}">${this.aemEnv}</span>` : nothing}
                 </div>
-
-                <div class="spacer"></div>
-
-                <div class="right-section">
-                    ${this.shouldShowPickers
-                        ? html`
-                              <mas-nav-folder-picker
-                                  ?disabled=${this.isFragmentEditorPage ||
-                                  this.isTranslationEditorPage ||
-                                  this.isSettingsEditorPage ||
-                                  this.isBulkPublishEditorPage}
-                              ></mas-nav-folder-picker>
-                              <mas-locale-picker
-                                  displayMode="strong"
-                                  @locale-changed=${this.onLocaleChanged}
-                                  ?disabled=${this.isLocalePickerDisabled}
-                                  surface=${Store.surface()}
-                                  locale=${this.topNavLocale}
-                              ></mas-locale-picker>
-                              <sp-switch
-                                  class="landscape-switch"
-                                  size="m"
-                                  ?checked=${this.isDraftLandscape}
-                                  @change=${(e) => {
-                                      Store.landscape.set(e.target.checked ? WCS_LANDSCAPE_DRAFT : WCS_LANDSCAPE_PUBLISHED);
-                                  }}
-                              >
-                                  Draft landscape offer
-                              </sp-switch>
-                              <div class="divider"></div>
-                              <div class="universal-elements">
-                                  <button class="icon-button" title="Help">
-                                      <sp-icon-help size="m"></sp-icon-help>
-                                  </button>
-                                  <button class="icon-button" title="Notifications">
-                                      <sp-icon-bell size="m"></sp-icon-bell>
-                                  </button>
-                              </div>
-                          `
-                        : ''}
-                    ${until(this.getProfileTemplate())}
+                ${this.breadcrumbs}
+                <div class="nav-actions">
+                    ${this.pickers}
+                    ${this.landscapeToggle}
+                    ${until(this.getProfileTemplate(), nothing)}
                 </div>
             </nav>
         `;
