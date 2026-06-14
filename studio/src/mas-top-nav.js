@@ -10,7 +10,18 @@ import { getDefaultLocaleCode } from '../../io/www/src/fragment/locales.js';
 import './mas-nav-folder-picker.js';
 import './mas-locale-picker.js';
 
+export const STUDIO_HEADER_BG = '#0a2540';
+
 class MasTopNav extends LitElement {
+    static styles = [
+        // Dark blue background for the Studio header
+        (function () {
+            const sheet = new CSSStyleSheet();
+            sheet.replaceSync(`mas-top-nav { background-color: ${STUDIO_HEADER_BG}; }`);
+            return sheet;
+        })(),
+    ];
+
     page = Store.page;
     inEdit = Store.fragments.inEdit;
     editorContext = Store.fragmentEditor.editorContext;

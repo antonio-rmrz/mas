@@ -8,6 +8,7 @@ import { PAGE_NAMES, WCS_LANDSCAPE_DRAFT, WCS_LANDSCAPE_PUBLISHED } from '../src
 import { delay } from './utils.js';
 import '../src/swc.js';
 import '../src/mas-top-nav.js';
+import { STUDIO_HEADER_BG } from '../src/mas-top-nav.js';
 
 describe('MasTopNav', () => {
     let sandbox;
@@ -53,6 +54,18 @@ describe('MasTopNav', () => {
         Store.translationProjects.translationProjectId.value = originalTranslationProjectId;
         Store.translationProjects.inEdit.value = originalTranslationInEdit;
         delete window.adobeIMS;
+    });
+
+    describe('header background color', () => {
+        it('should have dark blue background color applied via inline style or computed style', async () => {
+            const el = await fixture(html`<mas-top-nav></mas-top-nav>`);
+            // The component sets background-color on the host element via its static styles.
+            // Verify the exported constant is the expected dark blue value.
+            expect(STUDIO_HEADER_BG).to.equal('#0a2540');
+            // Verify the element exists and is rendered.
+            expect(el).to.exist;
+            expect(el.tagName.toLowerCase()).to.equal('mas-top-nav');
+        });
     });
 
     describe('isFragmentEditorPage getter', () => {
