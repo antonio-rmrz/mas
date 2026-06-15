@@ -1,5 +1,5 @@
 import { ENVS, EnvColorCode, WCS_LANDSCAPE_DRAFT, WCS_LANDSCAPE_PUBLISHED, PAGE_NAMES } from './constants.js';
-import { LitElement, html, nothing } from 'lit';
+import { LitElement, html, nothing, css } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { until } from 'lit/directives/until.js';
 import Store from './store.js';
@@ -11,6 +11,13 @@ import './mas-nav-folder-picker.js';
 import './mas-locale-picker.js';
 
 class MasTopNav extends LitElement {
+    static styles = css`
+        :host {
+            --studio-header-bg: #002B5C;
+            background-color: var(--studio-header-bg);
+        }
+    `;
+
     page = Store.page;
     inEdit = Store.fragments.inEdit;
     editorContext = Store.fragmentEditor.editorContext;

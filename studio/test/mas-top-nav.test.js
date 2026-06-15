@@ -7,7 +7,29 @@ import router from '../src/router.js';
 import { PAGE_NAMES, WCS_LANDSCAPE_DRAFT, WCS_LANDSCAPE_PUBLISHED } from '../src/constants.js';
 import { delay } from './utils.js';
 import '../src/swc.js';
-import '../src/mas-top-nav.js';
+import MasTopNav from '../src/mas-top-nav.js';
+
+describe('MasTopNav header background color', () => {
+    it('should define --studio-header-bg as #002B5C in static styles', () => {
+        const styleText = MasTopNav.styles
+            ? (Array.isArray(MasTopNav.styles)
+                ? MasTopNav.styles.map((s) => s.cssText).join('')
+                : MasTopNav.styles.cssText)
+            : '';
+        expect(styleText).to.include('--studio-header-bg');
+        expect(styleText).to.include('#002B5C');
+    });
+
+    it('should apply dark blue background-color via CSS variable', () => {
+        const styleText = MasTopNav.styles
+            ? (Array.isArray(MasTopNav.styles)
+                ? MasTopNav.styles.map((s) => s.cssText).join('')
+                : MasTopNav.styles.cssText)
+            : '';
+        expect(styleText).to.include('background-color');
+        expect(styleText).to.include('var(--studio-header-bg)');
+    });
+});
 
 describe('MasTopNav', () => {
     let sandbox;
