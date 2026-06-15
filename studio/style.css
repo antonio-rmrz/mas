@@ -2,6 +2,7 @@
 
 :root {
     --mas-nav-height: 50px;
+    --studio-header-bg: #003057;
 }
 
 body {
@@ -1155,6 +1156,11 @@ mas-top-nav #logo {
     display: flex;
     width: 32px;
     height: 32px;
+}
+
+mas-top-nav {
+    background-color: var(--studio-header-bg, #003057);
+    color: #ffffff;
 }
 
 mas-top-nav #mas-studio {
