@@ -2,6 +2,8 @@
 
 :root {
     --mas-nav-height: 50px;
+    --mas-header-bg: #00215e;
+    --mas-header-color: #ffffff;
 }
 
 body {
@@ -1071,6 +1073,8 @@ sp-progress-circle.preview {
 
 /* mas-top-nav styles */
 mas-top-nav {
+    background-color: var(--mas-header-bg);
+    color: var(--mas-header-color);
     width: 100%;
     height: 56px;
     background-color: var(--spectrum-gray-50, #ffffff);
@@ -1158,6 +1162,7 @@ mas-top-nav #logo {
 }
 
 mas-top-nav #mas-studio {
+    color: var(--mas-header-color);
     font-size: 18px;
     font-weight: 800;
     line-height: 22px;
