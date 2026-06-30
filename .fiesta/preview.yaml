@@ -1,0 +1,14 @@
+# How the harness turns a branch + page into a live preview URL for M@S.
+#
+# M@S runs on Adobe Edge Delivery Services, where any branch is served at
+# `<branch>--mas--<owner>.aem.page`. The visual gate substitutes {branch} and
+# {page} into pin_pattern, then captures screenshots of the result. For this
+# fork the owner is `antonio-rmrz`.
+#
+# Two notes specific to M@S:
+#   - Feature branches must be named `MWPW-XXXXXX` or the IMS auth regex rejects
+#     the preview (see the repo README).
+#   - Live capture of an authenticated surface (e.g. /studio.html) requires IMS
+#     credentials; the component docs pages render without auth.
+mechanism: aem-branch-preview
+pin_pattern: 'https://{branch}--mas--antonio-rmrz.aem.page{page}?martech=off'
