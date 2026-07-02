@@ -14,5 +14,4 @@ owners_from: CODEOWNERS
 mental_models:
   use:
     - mas-web-components
-    - merch-fragments
     - mas-studio
