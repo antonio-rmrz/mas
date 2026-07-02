@@ -15,6 +15,6 @@ steps:
     on_success: approve
     on_failure: __end__
   - id: approve
-    handler: mock.approval
+    handler: approval.request
     on_success: complete
     on_failure: __end__
