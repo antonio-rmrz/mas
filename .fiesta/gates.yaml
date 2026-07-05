@@ -32,6 +32,17 @@ gates:
     blocking: true
     failure_route: repair_loop
 
+  adversary:
+    template: adversary
+    name: Adversarial review — independent merge gate (INV-4)
+    description: >-
+      An independent adversary (different model class, no producer context)
+      reviews the diff before merge — required by the acom org floor
+      (fiesta config/floors/acom, snapshot in .fiesta/floor/). Skips honestly
+      when no adversary model is reachable in dev.
+    blocking: true
+    failure_route: escalate_to_human
+
   visual:
     template: visual
     name: Visual evidence (CCD merch cards demo)

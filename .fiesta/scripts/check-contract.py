@@ -50,6 +50,47 @@ if gates is not None:
         if not isinstance(defn, dict) or not defn.get("template"):
             errors.append(f"gates.yaml: gate '{gate_id}' needs a template")
 
+
+def _route(defn: dict) -> str:
+    # Mirrors the harness default: an unset failure_route is the strictest.
+    return defn.get("failure_route") or "escalate_to_human"
+
+
+# INV-3 monotonic strictness (R-8): tenant gates may only tighten the org
+# floor, never weaken it. The floor snapshot is vendored at
+# .fiesta/floor/gates.yaml (source of truth: fiesta config/floors/<org>/ —
+# the harness enforces THAT one at run time; this lint catches a weakening
+# PR in CI before it ever reaches a run).
+floor = _load("floor/gates.yaml")
+if floor is None:
+    print("WARN: no .fiesta/floor/gates.yaml snapshot — INV-3 strictness lint skipped")
+elif gates is not None:
+    tenant_gates = gates.get("gates") or {}
+    for name, fdef in (floor.get("gates") or {}).items():
+        tdef = tenant_gates.get(name)
+        if not isinstance(tdef, dict):
+            errors.append(f"gates.yaml: gate '{name}' is required by the org floor but missing (INV-3)")
+            continue
+        if tdef.get("template") != fdef.get("template"):
+            errors.append(
+                f"gates.yaml: gate '{name}' changes the org floor template "
+                f"'{fdef.get('template')}' to '{tdef.get('template')}' (INV-3)"
+            )
+        if fdef.get("blocking", True) and not tdef.get("blocking", True):
+            errors.append(f"gates.yaml: gate '{name}' is blocking in the org floor but advisory here (INV-3)")
+        if fdef.get("threshold") is not None and (
+            tdef.get("threshold") is None or tdef["threshold"] < fdef["threshold"]
+        ):
+            errors.append(
+                f"gates.yaml: gate '{name}' drops or lowers the org floor threshold {fdef['threshold']} (INV-3)"
+            )
+        if _route(fdef) != "repair_loop" and _route(tdef) == "repair_loop":
+            errors.append(
+                f"gates.yaml: gate '{name}' downgrades the org floor failure_route to autonomous repair_loop (INV-3)"
+            )
+        if fdef.get("require_human", True) and not tdef.get("require_human", True):
+            errors.append(f"gates.yaml: gate '{name}' drops require_human, which the org floor mandates (INV-3)")
+
 preview = _load("preview.yaml")
 if preview is not None and not preview.get("pin_pattern"):
     errors.append("preview.yaml: missing pin_pattern")
