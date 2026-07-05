@@ -12,6 +12,10 @@ start_step: generate
 steps:
   - id: generate
     handler: codegen.generate
+    # R-18: provider is explicit, never defaulted. contract_fixture is the
+    # inert demo output; switch to in_process_langgraph for real codegen.
+    inputs:
+      provider: contract_fixture
     on_success: approve
     on_failure: __end__
   - id: approve
