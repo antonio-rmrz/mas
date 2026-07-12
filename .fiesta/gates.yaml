@@ -2,55 +2,98 @@
 #
 # When this file is present the harness runs THESE gates in place of its
 # built-in default set. Each binds to a platform-owned template (command |
-# coverage | visual) and supplies the parameters; commands run in the worktree.
+# coverage | visual | adversary) and supplies the parameters; commands run in
+# the worktree.
 #
-# These mirror what M@S CI enforces on a web-components PR: eslint, prettier,
-# the Web Test Runner unit suite (which also enforces the ≥85% coverage
-# thresholds in web-test-runner.config.mjs), plus a visual check of a component
-# demo page. Test co-location per component is enforced by the runner + coverage
-# thresholds, so there is no separate structure gate.
+# These mirror what M@S CI enforces on a PR — check-formatting (prettier),
+# run-tests (the Web Test Runner suites, with the ≥85% coverage thresholds in
+# web-components/web-test-runner.config.mjs), and the web-components-pr
+# build-determinism check — plus what CI does not give us: an eslint pass over
+# the diff (upstream has no eslint PR check and the tree carries pre-existing
+# violations, hence the {js_files} scoping below) and adversarial + visual
+# review. Test co-location per component is enforced by the runner globbing +
+# coverage thresholds, so there is no separate structure gate.
+
+# One-time worktree setup before any gate runs: the command gates resolve
+# eslint/prettier/wtr from the repo's pinned devDependencies. Plain `npm ci`
+# is sufficient — CI's extra `npm add github:adobecom/milo#stage` step
+# (run-tests.yaml) is vestigial: nothing under web-components/, studio/ or
+# io/ imports milo, and the full suite passes after a bare npm ci
+# (verified 2026-07-12).
+provision: npm ci
+
 gates:
-  lint:
-    template: command
-    name: ESLint (web-components, studio)
-    cmd: npx eslint web-components studio
-    blocking: true
-    failure_route: repair_loop
+    lint:
+        template: command
+        name: ESLint (changed files)
+        # Scoped to the diff's JS files, not `web-components studio` wholesale:
+        # upstream CI never runs eslint, and the clean tree already carries
+        # violations (7 errors / 5 warnings on 2026-07-12), so a repo-wide lint
+        # gate would fail every run on baseline debt. Errors in touched files
+        # fail the gate; pre-existing warnings do not (same baseline reason —
+        # no --max-warnings 0). No JS in the diff → the gate skips.
+        cmd: npx eslint {js_files}
+        blocking: true
+        failure_route: repair_loop
 
-  format:
-    template: command
-    name: Prettier formatting check
-    cmd: npx prettier --check .
-    blocking: true
-    failure_route: repair_loop
+    format:
+        template: command
+        name: Prettier formatting check
+        # Repo-wide, exactly like CI's check-formatting workflow; upstream keeps
+        # the tree prettier-clean and .prettierignore excludes dist/ and the
+        # generated web-components/docs/.
+        cmd: npx prettier --check .
+        blocking: true
+        failure_route: repair_loop
 
-  unit-tests:
-    template: command
-    name: Web Test Runner unit suite (with coverage thresholds)
-    cmd: npm test
-    timeout_s: 600
-    blocking: true
-    failure_route: repair_loop
+    unit-tests:
+        template: command
+        name: Unit suites, all workspaces (wtr + mocha, with coverage)
+        cmd: npm test
+        timeout_s: 600
+        blocking: true
+        failure_route: repair_loop
 
-  adversary:
-    template: adversary
-    name: Adversarial review — independent merge gate (INV-4)
-    description: >-
-      An independent adversary (different model class, no producer context)
-      reviews the diff before merge — required by the acom org floor
-      (fiesta config/floors/acom, snapshot in .fiesta/floor/). Skips honestly
-      when no adversary model is reachable in dev.
-    blocking: true
-    failure_route: escalate_to_human
+    dist-sync:
+        template: command
+        name: Built artifacts in sync (web-components dist/ + docs/)
+        # The demo/docs surfaces load the CHECKED-IN dist/mas.js bundle, not
+        # src/ — a src-only diff renders unchanged on every visual surface, so
+        # stale bundles make visual evidence silently dishonest. Upstream CI
+        # (web-components-pr.yaml) enforces the same invariant by rejecting PRs
+        # whose rebuild produces uncommitted changes. The rebuild is
+        # byte-deterministic (verified 2026-07-12 on a clean tree).
+        cmd: bash .fiesta/scripts/check-dist-sync.sh
+        timeout_s: 300
+        blocking: true
+        failure_route: repair_loop
 
-  visual:
-    template: visual
-    name: Visual evidence (CCD merch cards demo)
-    page: /web-components/docs/ccd.html
-    breakpoints: [900, 1200]
-    criteria: >-
-      The CCD merch cards render without layout breakage or overlapping elements
-      at each breakpoint, with correct spacing, price/text alignment, and
-      typography matching the intended design. No empty or error card states.
-    require_human: true
-    blocking: true
+    adversary:
+        template: adversary
+        name: Adversarial review — independent merge gate (INV-4)
+        description: >-
+            An independent adversary (different model class, no producer context)
+            reviews the diff before merge — required by the acom org floor
+            (fiesta config/floors/acom, snapshot in .fiesta/floor/). Skips honestly
+            when no adversary model is reachable in dev.
+        blocking: true
+        failure_route: escalate_to_human
+
+    visual:
+        template: visual
+        name: Visual evidence (component demo surfaces)
+        # No default page on purpose: targets come from the ticket or from the
+        # surface catalog in preview.yaml, whose match globs route changed files
+        # to the demo gallery that actually renders them. A change nothing in the
+        # catalog can show (today: anything studio/-only, mas-field, io/)
+        # escalates to a human instead of being judged against an unrelated page.
+        breakpoints: [900, 1200]
+        on_missing_target: escalate
+        criteria: >-
+            The changed component renders on its demo gallery without layout
+            breakage or overlapping elements at each breakpoint: cards, prices and
+            CTAs keep correct spacing, alignment and typography, and prices resolve
+            to real currency values — no empty, placeholder or error states.
+            Neighboring cards on the same gallery are not visually regressed.
+        require_human: true
+        blocking: true
