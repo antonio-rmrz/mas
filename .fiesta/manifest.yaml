@@ -12,6 +12,6 @@ owners_from: CODEOWNERS
 # Selection is tenant-owned; the model content is resolved from the shared
 # registry at run time (see .fiesta/README.md).
 mental_models:
-  use:
-    - mas-web-components
-    - mas-studio
+    use:
+        - mas-web-components
+        - mas-studio

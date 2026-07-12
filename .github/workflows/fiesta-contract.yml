@@ -3,17 +3,17 @@ name: fiesta contract
 # must parse and every declared mental-model id must resolve in the shared
 # registry — a dangling reference fails the PR that introduces it.
 on:
-  pull_request:
-    paths:
-      - ".fiesta/**"
-      - ".github/workflows/fiesta-contract.yml"
+    pull_request:
+        paths:
+            - '.fiesta/**'
+            - '.github/workflows/fiesta-contract.yml'
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install pyyaml
-      - run: python .fiesta/scripts/check-contract.py
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: '3.12'
+            - run: pip install pyyaml
+            - run: python .fiesta/scripts/check-contract.py

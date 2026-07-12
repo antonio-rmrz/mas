@@ -8,13 +8,13 @@
 # This file is org POLICY and part of the TCB (see .fiesta/gates.yaml
 # tcb-guard): the platform team changes it; the self-improvement loop may not.
 gates:
-  adversary:
-    template: adversary
-    name: Adversarial review — independent merge gate (INV-4)
-    description: >-
-      A change merges on an independent adversary's verdict (different model
-      class, no producer context), never the producer's self-assessment.
-      Binds every acom product; tenants may tighten but not drop it. Skips
-      honestly when no adversary model is reachable in dev.
-    blocking: true
-    failure_route: escalate_to_human
+    adversary:
+        template: adversary
+        name: Adversarial review — independent merge gate (INV-4)
+        description: >-
+            A change merges on an independent adversary's verdict (different model
+            class, no producer context), never the producer's self-assessment.
+            Binds every acom product; tenants may tighten but not drop it. Skips
+            honestly when no adversary model is reachable in dev.
+        blocking: true
+        failure_route: escalate_to_human
