@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Verify the checked-in web-components build artifacts (dist/ + generated
-# docs/) match a fresh build of src/. The demo surfaces load dist/mas.js, so
-# stale bundles make visual evidence silently dishonest; upstream CI
-# (web-components-pr.yaml) enforces the same invariant on every PR.
+# Rebuild the web-components bundle + docs and fail on drift: the demo pages
+# load the checked-in dist/mas.js, and CI rejects out-of-sync build output.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -16,9 +14,8 @@ before=$(snapshot)
 after=$(snapshot)
 
 if [ "$before" != "$after" ]; then
-    echo "FAIL: web-components dist/ or docs/ is out of sync with src/." >&2
-    echo "Run 'cd web-components && npm run build:bundle && npm run build:docs'" >&2
-    echo "and include the regenerated artifacts in the diff." >&2
+    echo "FAIL: web-components dist/ or docs/ out of sync with src/." >&2
+    echo "Run 'cd web-components && npm run build:bundle && npm run build:docs' and commit." >&2
     exit 1
 fi
-echo "OK: web-components build artifacts are in sync"
+echo "OK: build artifacts in sync"
