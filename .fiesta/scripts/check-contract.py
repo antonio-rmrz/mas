@@ -92,8 +92,21 @@ elif gates is not None:
             errors.append(f"gates.yaml: gate '{name}' drops require_human, which the org floor mandates (INV-3)")
 
 preview = _load("preview.yaml")
-if preview is not None and not preview.get("pin_pattern"):
-    errors.append("preview.yaml: missing pin_pattern")
+if preview is not None:
+    if not preview.get("pin_pattern"):
+        errors.append("preview.yaml: missing pin_pattern")
+    for i, surface in enumerate(preview.get("surfaces") or []):
+        label = f"preview.yaml: surfaces[{i}]"
+        if not isinstance(surface, dict) or not surface.get("id"):
+            errors.append(f"{label}: needs an id")
+            continue
+        if bool(surface.get("page")) == bool(surface.get("url")):
+            errors.append(f"preview.yaml: surface '{surface['id']}' needs exactly one of page/url")
+        if not surface.get("description"):
+            errors.append(
+                f"preview.yaml: surface '{surface['id']}' needs a description "
+                "(the selector's only page signal)"
+            )
 
 pr = _load("pr.yaml")
 if pr is not None and not pr.get("template"):

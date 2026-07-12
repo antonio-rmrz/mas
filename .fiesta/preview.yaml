@@ -7,8 +7,117 @@
 #
 # Two notes specific to M@S:
 #   - Feature branches must be named `MWPW-XXXXXX` or the IMS auth regex rejects
-#     the preview (see the repo README).
+#     the preview (see the repo README) — pr.yaml's branch_pattern puts the
+#     Jira key first for exactly this reason.
 #   - Live capture of an authenticated surface (e.g. /studio.html) requires IMS
-#     credentials; the component docs pages render without auth.
+#     credentials; the component docs pages render without auth. Studio has no
+#     surface here yet — studio/-only changes escalate to a human on the visual
+#     gate (on_missing_target: escalate) rather than being judged on an
+#     unrelated page.
 mechanism: aem-branch-preview
 pin_pattern: 'https://{branch}--mas--antonio-rmrz.aem.page{page}?martech=off'
+
+# The demo galleries under web-components/docs/ are code-bus pages checked into
+# the repo (no content-bus preview rot) whose cards hydrate real AEM fragments
+# from the shared adobecom DA mount — genuinely asset-bearing surfaces. They
+# render the checked-in dist/mas.js bundle, which is why gates.yaml carries a
+# dist-sync gate. `match` globs are fnmatch patterns (`*` crosses `/`); every
+# surface declares one, so a change no glob covers yields no catalog target and
+# the visual gate escalates instead of guessing.
+surfaces:
+    - id: merch-card
+      page: /web-components/docs/merch-card.html
+      description: >-
+          Generic merch-card gallery rendering many variants side by side — the
+          fallback surface for cross-cutting web-components changes (merch-card
+          core, variant-layout, the variants registry, global styles, utils).
+          Prefer a dedicated gallery below when one matches the change; pick
+          nothing if the change cannot alter what merch cards render (e.g.
+          headless mas-field logic).
+      match: 'web-components/src/*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: ccd
+      page: /web-components/docs/ccd.html
+      description: >-
+          CCD (Creative Cloud Desktop) slice and suggested cards — a dense grid of
+          ~24 real cards. The surface for ccd-slice / ccd-suggested variant work.
+      match: 'web-components/src/variants/ccd-*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: fries
+      page: /web-components/docs/fries.html
+      description: >-
+          Fries card gallery — the Fries variant incl. its border/gradient
+          treatments and size options.
+      match: 'web-components/src/variants/fries*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: catalog
+      page: /web-components/docs/catalog.html
+      description: >-
+          Catalog card gallery — the catalog variant used on plans/catalog pages.
+      match: 'web-components/src/variants/catalog*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: plans
+      page: /web-components/docs/plans.html
+      description: >-
+          Plans card gallery (plans and plans-v2 variants) — pricing cards with
+          badges, stock checkboxes and quantity selectors.
+      match: 'web-components/src/variants/plans*'
+      requires:
+          - /web-components/docs/styles.css
+
+    - id: inline-price
+      page: /web-components/docs/inline-price.html
+      description: >-
+          Inline price spans in every configuration: promo prices, strikethrough,
+          tax inclusivity labels, per-unit labels, alternative price formats and
+          locale-resolved price literals. The surface for price rendering, tax and
+          unit label, and price-literals work.
+      match: 'web-components/*price*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: checkout
+      page: /web-components/docs/checkout-link.html
+      description: >-
+          Checkout links and buttons with workflow-step, quantity and promo
+          parameters — the surface for checkout-link/checkout-button/checkout-mixin
+          work.
+      match: 'web-components/src/checkout-*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: feature-flags
+      page: /web-components/docs/feature-flags.html
+      description: >-
+          Feature-flag demo page documenting the mas-ff-* flags and rendering
+          flag-sensitive price examples — the surface for mas-commerce-service
+          flag/service wiring changes.
+      match: 'web-components/src/mas-commerce-service*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: aem-fragment
+      page: /web-components/docs/aem-fragment.html
+      description: >-
+          aem-fragment hydration demo — cards built from real fragment UUIDs
+          resolved from the DA mount. The surface for aem-fragment / fragment
+          cache work.
+      match: 'web-components/src/aem-fragment*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
