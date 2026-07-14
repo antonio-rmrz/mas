@@ -7,6 +7,10 @@
 #
 # This file is org POLICY and part of the TCB (see .fiesta/gates.yaml
 # tcb-guard): the platform team changes it; the self-improvement loop may not.
+regeneration:
+    # Maximum total producer candidates; tenants inherit or tighten downward.
+    max_candidates: 5
+
 gates:
     adversary:
         template: adversary

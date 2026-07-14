@@ -51,9 +51,30 @@ if gates is not None:
             errors.append(f"gates.yaml: gate '{gate_id}' needs a template")
 
 
+def _regeneration_max(document: dict | None, label: str) -> int | None:
+    if document is None or "regeneration" not in document:
+        return None
+    policy = document["regeneration"]
+    if not isinstance(policy, dict):
+        errors.append(f"{label}: regeneration must be a mapping")
+        return None
+    unknown = sorted(set(policy) - {"max_candidates"})
+    if unknown:
+        errors.append(f"{label}: regeneration has unknown fields {unknown}")
+    value = policy.get("max_candidates")
+    if type(value) is not int or value < 1:
+        errors.append(f"{label}: regeneration.max_candidates must be a positive integer")
+        return None
+    return value
+
+
 def _route(defn: dict) -> str:
     # Mirrors the harness default: an unset failure_route is the strictest.
     return defn.get("failure_route") or "escalate_to_human"
+
+
+def _autonomous_route(defn: dict) -> bool:
+    return _route(defn) in {"repair_loop", "regenerate"}
 
 
 # INV-3 monotonic strictness (R-8): tenant gates may only tighten the org
@@ -62,9 +83,21 @@ def _route(defn: dict) -> str:
 # the harness enforces THAT one at run time; this lint catches a weakening
 # PR in CI before it ever reaches a run).
 floor = _load("floor/gates.yaml")
+tenant_regeneration_max = _regeneration_max(gates, "gates.yaml")
+floor_regeneration_max = _regeneration_max(floor, "floor/gates.yaml")
 if floor is None:
     print("WARN: no .fiesta/floor/gates.yaml snapshot — INV-3 strictness lint skipped")
 elif gates is not None:
+    if (
+        floor_regeneration_max is not None
+        and tenant_regeneration_max is not None
+        and tenant_regeneration_max > floor_regeneration_max
+    ):
+        errors.append(
+            "gates.yaml: regeneration.max_candidates "
+            f"{tenant_regeneration_max} exceeds the org floor ceiling "
+            f"{floor_regeneration_max} (INV-3)"
+        )
     tenant_gates = gates.get("gates") or {}
     for name, fdef in (floor.get("gates") or {}).items():
         tdef = tenant_gates.get(name)
@@ -84,9 +117,10 @@ elif gates is not None:
             errors.append(
                 f"gates.yaml: gate '{name}' drops or lowers the org floor threshold {fdef['threshold']} (INV-3)"
             )
-        if _route(fdef) != "repair_loop" and _route(tdef) == "repair_loop":
+        if not _autonomous_route(fdef) and _autonomous_route(tdef):
             errors.append(
-                f"gates.yaml: gate '{name}' downgrades the org floor failure_route to autonomous repair_loop (INV-3)"
+                f"gates.yaml: gate '{name}' downgrades the org floor failure_route "
+                f"to autonomous {_route(tdef)} (INV-3)"
             )
         if fdef.get("require_human", True) and not tdef.get("require_human", True):
             errors.append(f"gates.yaml: gate '{name}' drops require_human, which the org floor mandates (INV-3)")
