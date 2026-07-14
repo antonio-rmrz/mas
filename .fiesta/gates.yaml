@@ -13,6 +13,8 @@ gates:
         cmd: npx eslint {js_files}
         blocking: true
         failure_route: repair_loop
+        repair:
+            cmd: npx eslint {js_files} --fix
 
     format:
         template: command
