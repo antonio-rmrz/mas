@@ -4,7 +4,9 @@ mechanism: aem-branch-preview
 pin_pattern: 'https://{branch}--mas--antonio-rmrz.aem.page{page}?martech=off'
 # Consumer pages load branch web components via ?maslibs= (a value containing
 # '--' is a full host label, so the fork resolves). Docs pages ignore maslibs.
-overlay_pattern: 'https://main--da-cc--adobecom.aem.page{page}?maslibs={branch}--mas--antonio-rmrz&martech=off'
+# The host here must be a mas-owned one: a consumer host in this pattern
+# shadows pasted consumer URLs and strips them to bare paths.
+overlay_pattern: 'https://main--mas--adobecom.aem.page{page}?maslibs={branch}--mas--antonio-rmrz&martech=off'
 
 # Local serve (preferred): the repo's own dev server on the diff-applied
 # worktree. Port 3000 is what maslibs=local resolves to in consumer bootstraps.
@@ -133,3 +135,62 @@ surfaces:
       requires:
           - /web-components/docs/spectrum.css
           - /web-components/docs/styles.css
+
+    - id: plans-collection
+      page: /web-components/docs/plans-collection.html
+      description: >-
+          Plans collection gallery, grouped plans cards driven by the
+          merch-card-collection element.
+      match: 'web-components/src/merch-card-collection*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    # Mined from adobecom/mas merged PR test urls (250 PRs, 2026-03 to 07,
+    # each probed HTTP 200 and public). Consumer pages stay on .aem.live, the
+    # .aem.page previews of these sites are ims gated.
+    - id: cc-plans
+      url: https://main--cc--adobecom.aem.live/creativecloud/plans?martech=off
+      description: >-
+          Production Creative Cloud plans page, plans cards with badges,
+          quantity select and legal labels, hydrated through the mas.adobe.com
+          fragment delivery pipeline. Pick for io/www transformer changes or
+          plans work that needs real production context.
+      match: 'io/www/src/*'
+
+    - id: cc-plans-fr
+      url: https://main--cc--adobecom.aem.live/fr/creativecloud/plans?martech=off
+      description: >-
+          French Creative Cloud plans page, localized prices and TTC tax
+          labels. Pick for locale or tax label changes where exact localized
+          strings must render.
+      match: 'web-components/price-literals.json'
+
+    - id: cc-plans-ar
+      url: https://main--cc--adobecom.aem.live/ar/creativecloud/plans?martech=off
+      description: >-
+          Arabic Creative Cloud plans page, right to left layout across plans
+          cards. Pick for direction sensitive layout changes.
+      match: 'web-components/src/global.css.js'
+
+    - id: cc-products-catalog
+      url: https://main--cc--adobecom.aem.live/products/catalog?martech=off
+      description: >-
+          Production products catalog, catalog cards inside a collection with
+          search, sidenav filters and load more.
+      match: 'web-components/src/sidenav/*'
+
+    - id: cc-segment-blade
+      url: https://main--cc--adobecom.aem.live/au/cc-shared/fragments/merch/creativecloud/illustration/merch-card/segment-blade?martech=off
+      description: >-
+          Single segment card fragment page with a real AU offer, exercises
+          price templates, per unit and tax labels on one isolated card.
+      match: 'web-components/src/price/*'
+
+    - id: milo-tax-label-test
+      url: https://main--milo--adobecom.aem.page/kr/drafts/mili/tax-label-test?martech=off
+      description: >-
+          Korean tax label test page on the milo host, full width parentheses
+          and locale specific tax strings across many cards. Recurring test
+          page in tax label PRs.
+      match: 'web-components/src/price/template.js'
