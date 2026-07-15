@@ -2,6 +2,58 @@
 # named MWPW-XXXXXX or the IMS regex rejects the preview (see repo README).
 mechanism: aem-branch-preview
 pin_pattern: 'https://{branch}--mas--antonio-rmrz.aem.page{page}?martech=off'
+# Consumer pages load branch web components via ?maslibs= (a value containing
+# '--' is a full host label, so the fork resolves). Docs pages ignore maslibs.
+overlay_pattern: 'https://main--da-cc--adobecom.aem.page{page}?maslibs={branch}--mas--antonio-rmrz&martech=off'
+
+# Local serve (preferred): the repo's own dev server on the diff-applied
+# worktree. Port 3000 is what maslibs=local resolves to in consumer bootstraps.
+# Galleries hydrate from prod services (mas/io, WCS) so they render fully here.
+local:
+    cmd: 'aem up --port=3000 --no-open --stop-other --url https://main--mas--adobecom.aem.page'
+    url: 'http://localhost:3000{page}'
+    # Foreign consumer pages stay remote on the public content host and pull
+    # web components from this server via maslibs=local.
+    consumer_overlay:
+        own_hosts: ['--mas--']
+        params: 'maslibs=local&martech=off'
+        host_swap: { '.aem.page': '.aem.live' }
+
+# Hosts that carry mas pages when a requester pastes a URL: studio deep links
+# and da-cc consumer pages in practice. Live URLs capture on the .page host.
+capture_hosts:
+    - '--mas--adobecom.aem.page'
+    - '--da-cc--adobecom.aem.page'
+    - host: '--mas--adobecom.aem.live'
+      capture_on: '--mas--adobecom.aem.page'
+    - host: '--da-cc--adobecom.aem.live'
+      capture_on: '--da-cc--adobecom.aem.page'
+
+# IMS login for Studio surfaces, same account and flow already verified on the
+# milo tenant. Dormant until a capture_hosts entry attaches it via auth: ims.
+auth_profiles:
+    ims:
+        account:
+            username: cod23684+masautomation@adobetest.com
+            password_env: IMS_PASS
+        idp_hosts: [auth.services.adobe.com, ims-na1.adobelogin.com]
+        steps:
+            - fill: '#EmailPage-EmailField'
+              value_from: username
+              timeout_ms: 45000
+            - click: '[data-id=EmailPage-ContinueButton]'
+            - fill: '#PasswordPage-PasswordField'
+              value_from: password
+              timeout_ms: 60000
+            - click: '[data-id=PasswordPage-ContinueButton]'
+            # Profile chooser and passkey nudge are interstitials; skip if absent.
+            - click: '[data-id="PP-ProfileChooser-AuthAccount"]'
+              optional: true
+              timeout_ms: 8000
+            - click: 'button:has-text("Skip"), [data-id="PasskeyNudgePage-SkipButton"]'
+              optional: true
+              timeout_ms: 8000
+        settle_ms: 5000
 
 # Demo galleries under web-components/docs/ (code-bus pages, real fragments).
 # Every surface declares a match glob; a change no glob covers escalates.
