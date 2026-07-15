@@ -59,15 +59,6 @@ gates:
         # outside its mutation boundary), so the producer redoes the candidate.
         failure_route: regenerate
 
-    adversary:
-        template: adversary
-        name: Adversarial review — independent merge gate (INV-4)
-        description: >-
-            Independent-model review of the diff before merge, required by the
-            acom org floor. Skips honestly when no adversary model is reachable.
-        blocking: true
-        failure_route: escalate_to_human
-
     visual:
         template: visual
         name: Visual evidence (component demo surfaces)
@@ -84,3 +75,14 @@ gates:
             neighboring cards are not regressed.
         require_human: true
         blocking: true
+
+    # Last on purpose: the adversary reviews the code together with every
+    # deterministic and visual gate result, not blind of them.
+    adversary:
+        template: adversary
+        name: Adversarial review — independent merge gate (INV-4)
+        description: >-
+            Independent-model review of the diff before merge, required by the
+            acom org floor. Skips honestly when no adversary model is reachable.
+        blocking: true
+        failure_route: escalate_to_human
