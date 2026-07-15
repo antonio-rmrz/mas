@@ -1,0 +1,24 @@
+# A M@S workflow, composed from the harness capability library.
+#
+# workflow_id is namespaced to `mas.restyle-component` by the harness — do not
+# prefix it here. Each step names a registered handler; steps route by
+# on_success / on_failure to another step id or a terminal (`complete` / `__end__`).
+workflow_id: restyle-component
+name: Restyle a M@S web component
+description: >-
+    Generate a styling change to a web component (or one of its variants) from an
+    issue, then require human sign-off before it proceeds.
+start_step: generate
+steps:
+    - id: generate
+      handler: codegen.generate
+      # R-18: provider is explicit, never defaulted. contract_fixture is the
+      # inert demo output; switch to in_process_langgraph for real codegen.
+      inputs:
+          provider: contract_fixture
+      on_success: approve
+      on_failure: __end__
+    - id: approve
+      handler: approval.request
+      on_success: complete
+      on_failure: __end__

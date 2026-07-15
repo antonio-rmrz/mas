@@ -1,0 +1,67 @@
+# M@S verification gates. When this file is present the harness runs these
+# in place of its built-in set; commands run in the worktree.
+
+# Command gates need the pinned devDeps. CI's extra milo#stage install is
+# vestigial — nothing here imports milo.
+provision: npm ci
+
+gates:
+    lint:
+        template: command
+        name: ESLint (changed files)
+        # Diff-scoped: upstream CI doesn't lint and the tree carries old violations.
+        cmd: npx eslint {js_files}
+        blocking: true
+        failure_route: repair_loop
+        repair:
+            cmd: npx eslint {js_files} --fix
+
+    format:
+        template: command
+        name: Prettier formatting check
+        # Same repo-wide check as CI's check-formatting workflow.
+        cmd: npx prettier --check .
+        blocking: true
+        failure_route: repair_loop
+
+    unit-tests:
+        template: command
+        name: Unit suites, all workspaces
+        cmd: npm test
+        timeout_s: 600
+        blocking: true
+        failure_route: repair_loop
+
+    dist-sync:
+        template: command
+        name: Built artifacts in sync (web-components)
+        # Demo pages load the checked-in dist/mas.js, so a stale bundle hides
+        # src changes from the visual gate. Mirrors CI's web-components-pr check.
+        cmd: bash .fiesta/scripts/check-dist-sync.sh
+        timeout_s: 300
+        blocking: true
+        failure_route: repair_loop
+
+    adversary:
+        template: adversary
+        name: Adversarial review — independent merge gate (INV-4)
+        description: >-
+            Independent-model review of the diff before merge, required by the
+            acom org floor. Skips honestly when no adversary model is reachable.
+        blocking: true
+        failure_route: escalate_to_human
+
+    visual:
+        template: visual
+        name: Visual evidence (component demo surfaces)
+        # No default page: the surface catalog in preview.yaml routes targets,
+        # and a change no surface can show escalates instead of guessing.
+        breakpoints: [900, 1200]
+        on_missing_target: escalate
+        criteria: >-
+            The changed component renders on its demo gallery without layout
+            breakage or overlap at each breakpoint; spacing, alignment and
+            typography hold, prices resolve to real currency values, and
+            neighboring cards are not regressed.
+        require_human: true
+        blocking: true

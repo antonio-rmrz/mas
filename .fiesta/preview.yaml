@@ -1,0 +1,83 @@
+# EDS branch previews: {branch}--mas--antonio-rmrz.aem.page. Branches must be
+# named MWPW-XXXXXX or the IMS regex rejects the preview (see repo README).
+mechanism: aem-branch-preview
+pin_pattern: 'https://{branch}--mas--antonio-rmrz.aem.page{page}?martech=off'
+
+# Demo galleries under web-components/docs/ (code-bus pages, real fragments).
+# Every surface declares a match glob; a change no glob covers escalates.
+surfaces:
+    - id: merch-card
+      page: /web-components/docs/merch-card.html
+      description: >-
+          Generic merch-card gallery with many variants side by side — fallback
+          for cross-cutting web-components changes. Prefer a dedicated gallery
+          when one matches; pick nothing for changes cards can't render.
+      match: 'web-components/src/*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: ccd
+      page: /web-components/docs/ccd.html
+      description: CCD slice and suggested cards in a dense grid.
+      match: 'web-components/src/variants/ccd-*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: fries
+      page: /web-components/docs/fries.html
+      description: Fries cards, incl. border/gradient treatments and sizes.
+      match: 'web-components/src/variants/fries*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: catalog
+      page: /web-components/docs/catalog.html
+      description: Catalog variant cards.
+      match: 'web-components/src/variants/catalog*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: plans
+      page: /web-components/docs/plans.html
+      description: Plans and plans-v2 pricing cards with badges and quantity selectors.
+      match: 'web-components/src/variants/plans*'
+      requires:
+          - /web-components/docs/styles.css
+
+    - id: inline-price
+      page: /web-components/docs/inline-price.html
+      description: >-
+          Inline price spans in every configuration: promo, strikethrough, tax
+          and per-unit labels, locale price literals.
+      match: 'web-components/*price*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: checkout
+      page: /web-components/docs/checkout-link.html
+      description: Checkout links and buttons with workflow-step, quantity and promo params.
+      match: 'web-components/src/checkout-*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: feature-flags
+      page: /web-components/docs/feature-flags.html
+      description: mas-ff-* flag docs with flag-sensitive price examples.
+      match: 'web-components/src/mas-commerce-service*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
+
+    - id: aem-fragment
+      page: /web-components/docs/aem-fragment.html
+      description: Cards hydrated from real fragment UUIDs via the DA mount.
+      match: 'web-components/src/aem-fragment*'
+      requires:
+          - /web-components/docs/spectrum.css
+          - /web-components/docs/styles.css
