@@ -6,6 +6,12 @@
 regeneration:
     max_candidates: 5
 
+# Checked-in build outputs that ship with any src change. dist-sync requires
+# them, so the candidate scope check must not reject them as unplanned.
+generated:
+    - 'web-components/dist/**'
+    - 'web-components/docs/**'
+
 # Command gates need the pinned devDeps. CI's extra milo#stage install is
 # vestigial — nothing here imports milo.
 provision: npm ci
