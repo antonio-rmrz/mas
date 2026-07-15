@@ -4,7 +4,9 @@ mechanism: aem-branch-preview
 pin_pattern: 'https://{branch}--mas--antonio-rmrz.aem.page{page}?martech=off'
 # Consumer pages load branch web components via ?maslibs= (a value containing
 # '--' is a full host label, so the fork resolves). Docs pages ignore maslibs.
-overlay_pattern: 'https://main--da-cc--adobecom.aem.page{page}?maslibs={branch}--mas--antonio-rmrz&martech=off'
+# The host here must be a mas-owned one: a consumer host in this pattern
+# shadows pasted consumer URLs and strips them to bare paths.
+overlay_pattern: 'https://main--mas--adobecom.aem.page{page}?maslibs={branch}--mas--antonio-rmrz&martech=off'
 
 # Local serve (preferred): the repo's own dev server on the diff-applied
 # worktree. Port 3000 is what maslibs=local resolves to in consumer bootstraps.
