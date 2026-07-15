@@ -1,6 +1,11 @@
 # M@S verification gates. When this file is present the harness runs these
 # in place of its built-in set; commands run in the worktree.
 
+# Producer rebuild budget for gates that route to regenerate; the acom floor
+# caps it at 5 and tenants may only tighten it.
+regeneration:
+    max_candidates: 5
+
 # Command gates need the pinned devDeps. CI's extra milo#stage install is
 # vestigial — nothing here imports milo.
 provision: npm ci
@@ -23,6 +28,10 @@ gates:
         cmd: npx prettier --check .
         blocking: true
         failure_route: repair_loop
+        # The tree is prettier-clean at base, so failures are always in the
+        # changed files; writing only those keeps the repair inside its boundary.
+        repair:
+            cmd: npx prettier --write {changed_files} --ignore-unknown
 
     unit-tests:
         template: command
@@ -40,7 +49,9 @@ gates:
         cmd: bash .fiesta/scripts/check-dist-sync.sh
         timeout_s: 300
         blocking: true
-        failure_route: repair_loop
+        # A repair step can't rebuild the bundle (the missing dist files sit
+        # outside its mutation boundary), so the producer redoes the candidate.
+        failure_route: regenerate
 
     adversary:
         template: adversary
@@ -57,6 +68,8 @@ gates:
         # No default page: the surface catalog in preview.yaml routes targets,
         # and a change no surface can show escalates instead of guessing.
         breakpoints: [900, 1200]
+        # Short clip per target for the human reviewer; the judge stays on stills.
+        video: true
         on_missing_target: escalate
         criteria: >-
             The changed component renders on its demo gallery without layout
