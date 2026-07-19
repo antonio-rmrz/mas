@@ -19,18 +19,13 @@ local:
     consumer_overlay:
         own_hosts: ['--mas--']
         params: 'maslibs=local&martech=off'
-    # Gated consumer previews are served through a local authenticated proxy.
-    # The engine fills {port}; the token comes from the named env var.
-    proxy:
-        cmd: 'aem up --port={port} --no-open --no-livereload --stop-other --url=https://{host} --site-token={token}'
-        url: 'http://localhost:{port}{page}'
 
 # Hosts that carry mas pages when a requester pastes a URL: studio deep links
 # and da-cc consumer pages in practice. Live URLs capture on the .page host.
 capture_hosts:
     - '--mas--adobecom.aem.page'
     - host: '--da-cc--adobecom.aem.page'
-      proxy: { token_env: AEM_SITE_TOKEN_DA_CC }
+      auth: da-cc-token
     - host: '--mas--adobecom.aem.live'
       capture_on: '--mas--adobecom.aem.page'
     - host: '--da-cc--adobecom.aem.live'
@@ -39,6 +34,9 @@ capture_hosts:
 # IMS login for Studio surfaces, same account and flow already verified on the
 # milo tenant. Dormant until a capture_hosts entry attaches it via auth: ims.
 auth_profiles:
+    da-cc-token:
+        token_env: AEM_SITE_TOKEN_DA_CC
+        header: 'authorization: token {token}'
     ims:
         account:
             username: cod23684+masautomation@adobetest.com
