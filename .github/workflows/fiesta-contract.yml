@@ -1,11 +1,11 @@
 name: fiesta contract
-# Reference-integrity for the .fiesta/ tenant contract (R-14): the contract
+# Reference-integrity for the .pinata/ tenant contract (R-14): the contract
 # must parse and every declared mental-model id must resolve in the shared
 # registry — a dangling reference fails the PR that introduces it.
 on:
     pull_request:
         paths:
-            - '.fiesta/**'
+            - '.pinata/**'
             - '.github/workflows/fiesta-contract.yml'
 jobs:
     check:
@@ -16,4 +16,4 @@ jobs:
               with:
                   python-version: '3.12'
             - run: pip install pyyaml
-            - run: python .fiesta/scripts/check-contract.py
+            - run: python .pinata/scripts/check-contract.py

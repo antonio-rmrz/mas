@@ -1,4 +1,4 @@
-# `.fiesta/` — M@S's harness contract
+# `.pinata/` — M@S's harness contract
 
 How M@S drives the fiesta automation harness as a tenant. The harness holds no
 M@S-specific knowledge; everything M@S-specific lives here.

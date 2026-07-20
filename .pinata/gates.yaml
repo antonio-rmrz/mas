@@ -52,7 +52,7 @@ gates:
         name: Built artifacts in sync (web-components)
         # Demo pages load the checked-in dist/mas.js, so a stale bundle hides
         # src changes from the visual gate. Mirrors CI's web-components-pr check.
-        cmd: bash .fiesta/scripts/check-dist-sync.sh
+        cmd: bash .pinata/scripts/check-dist-sync.sh
         timeout_s: 300
         blocking: true
         # A repair step can't rebuild the bundle (the missing dist files sit

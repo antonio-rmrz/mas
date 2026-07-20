@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reference-integrity check for the .fiesta/ tenant contract (R-14).
+"""Reference-integrity check for the .pinata/ tenant contract (R-14).
 
 Validates that the contract files parse with their required shapes, and that
 every mental-model id declared in manifest.yaml resolves to a directory in the
@@ -79,14 +79,14 @@ def _autonomous_route(defn: dict) -> bool:
 
 # INV-3 monotonic strictness (R-8): tenant gates may only tighten the org
 # floor, never weaken it. The floor snapshot is vendored at
-# .fiesta/floor/gates.yaml (source of truth: fiesta config/floors/<org>/ —
+# .pinata/floor/gates.yaml (source of truth: fiesta config/floors/<org>/ —
 # the harness enforces THAT one at run time; this lint catches a weakening
 # PR in CI before it ever reaches a run).
 floor = _load("floor/gates.yaml")
 tenant_regeneration_max = _regeneration_max(gates, "gates.yaml")
 floor_regeneration_max = _regeneration_max(floor, "floor/gates.yaml")
 if floor is None:
-    print("WARN: no .fiesta/floor/gates.yaml snapshot — INV-3 strictness lint skipped")
+    print("WARN: no .pinata/floor/gates.yaml snapshot — INV-3 strictness lint skipped")
 elif gates is not None:
     if (
         floor_regeneration_max is not None

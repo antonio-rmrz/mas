@@ -10,7 +10,7 @@ owners_from: CODEOWNERS
 
 # Which shared mental models the planner should consult for M@S work.
 # Selection is tenant-owned; the model content is resolved from the shared
-# registry at run time (see .fiesta/README.md).
+# registry at run time (see .pinata/README.md).
 mental_models:
     use:
         - mas-web-components
