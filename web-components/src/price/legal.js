@@ -27,6 +27,9 @@ function renderContainer(
     displayDot = true,
 ) {
     let markup = '';
+    if (perUnitLabel && planTypeLabel) {
+        perUnitLabel += ' ';
+    }
     markup += renderSpan(cssClassNames.unitType, perUnitLabel, null, true);
 
     if (taxInclusivityLabel && planTypeLabel && displayDot) {

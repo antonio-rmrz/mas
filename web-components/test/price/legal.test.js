@@ -63,6 +63,27 @@ describe('function "createLegalTemplate"', () => {
         );
     });
 
+    it('displays legal template with per unit and plan type labels separated by a space', () => {
+        renderAndComparePrice(
+            'createLegalTemplate5',
+            legalTemplate(
+                {
+                    country: 'US',
+                    language: 'en',
+                    displayPerUnit: true,
+                    displayPlanType: true,
+                    literals: {
+                        planTypeLabel: 'Annual, billed monthly',
+                    },
+                },
+                {
+                    planType: 'ABM',
+                },
+                {},
+            ),
+        );
+    });
+
     it('displays legal template with plan type text and hides tax text when country is US and language is en', () => {
         renderAndComparePrice(
             'createLegalTemplate3',
