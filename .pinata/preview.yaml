@@ -149,25 +149,38 @@ surfaces:
           - /web-components/docs/spectrum.css
           - /web-components/docs/styles.css
 
-    # Mined from adobecom/mas merged PR test urls (250 PRs, 2026-03 to 07,
-    # each probed HTTP 200 and public). Consumer pages stay on .aem.live, the
-    # .aem.page previews of these sites are ims gated.
+    # Mined from adobecom/mas merged PR test urls (full history, 745 PRs
+    # 2024-06 to 2026-07; each probed HTTP 200, public, never a /drafts/ page).
+    # Consumer pages stay on .aem.live, their .aem.page previews are ims gated.
+    # The pre-2025-10 window adds no pages: its unique urls are all dead or
+    # ims gated (old ccd galleries 404, studio deeplinks gated).
     - id: cc-plans
       url: https://main--cc--adobecom.aem.live/creativecloud/plans?martech=off
       description: >-
-          Production Creative Cloud plans page, plans cards with badges,
-          quantity select and legal labels, hydrated through the mas.adobe.com
-          fragment delivery pipeline. Pick for io/www transformer changes or
-          plans work that needs real production context.
+          Production Creative Cloud plans page (en-US baseline), plans cards
+          with badges, quantity select and legal labels, hydrated through the
+          mas.adobe.com fragment delivery pipeline. Pick for io/www transformer
+          changes or plans work that needs real production context; the
+          localized siblings below cover locale-specific rendering.
       match: 'io/www/src/*'
 
     - id: cc-plans-fr
       url: https://main--cc--adobecom.aem.live/fr/creativecloud/plans?martech=off
       description: >-
-          French Creative Cloud plans page, localized prices and TTC tax
-          labels. Pick for locale or tax label changes where exact localized
-          strings must render.
+          French Creative Cloud plans page, localized price literals: TTC
+          suffix, comma decimals, euro placement. Pick for price-literals or
+          locale string changes where the exact French strings must render;
+          for tax-label markup itself prefer cc-plans-kr.
       match: 'web-components/price-literals.json'
+
+    - id: cc-plans-kr
+      url: https://main--cc--adobecom.aem.live/kr/creativecloud/plans?martech=off
+      description: >-
+          Korean Creative Cloud plans page, tax-inclusive label strings and
+          full-width punctuation across every plans card. Pick for price
+          template or tax-label rendering changes that need a whole page of
+          localized cards, not one isolated card.
+      match: 'web-components/src/price/template.js'
 
     - id: cc-plans-ar
       url: https://main--cc--adobecom.aem.live/ar/creativecloud/plans?martech=off
@@ -190,10 +203,27 @@ surfaces:
           price templates, per unit and tax labels on one isolated card.
       match: 'web-components/src/price/*'
 
-    - id: milo-tax-label-test
-      url: https://main--milo--adobecom.aem.page/kr/drafts/mili/tax-label-test?martech=off
+    - id: dc-bizpro-plans
+      url: https://main--da-dc--adobecom.aem.live/dc-shared/fragments/tests/2026/q2/ace1205/fragments/ace1205-plans?martech=off
       description: >-
-          Korean tax label test page on the milo host, full width parentheses
-          and locale specific tax strings across many cards. Recurring test
-          page in tax label PRs.
-      match: 'web-components/src/price/template.js'
+          BizPro plan cards with VAT legal pricing on the DC ace1205 campaign
+          fragment page. Pick for bizpro variant or business-pricing legal
+          label changes.
+      match: 'web-components/src/variants/bizpro*'
+
+    - id: express-pricing
+      url: https://main--da-express-milo--adobecom.aem.live/jp/express/pricing?martech=off
+      description: >-
+          Japanese Adobe Express pricing page with the full and simplified
+          pricing express cards; JP titles double as a long-title wrapping
+          check. Pick for the express card variants.
+      match: 'web-components/src/variants/*pricing-express*'
+
+    - id: milo-merch-kitchen-sink
+      url: https://main--milo--adobecom.aem.page/merch/kitchen-sink?martech=off
+      description: >-
+          Merch kitchen sink on the milo host, every card variant on one page
+          with real fragments. Production-content sibling of the local
+          merch-card gallery, pick for merch-card chrome changes (badges,
+          strokes, hydration) that need real content-bus context.
+      match: 'web-components/src/merch-card.js'
