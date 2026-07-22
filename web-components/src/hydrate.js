@@ -477,6 +477,23 @@ function transformLinkToButton(linkElement, merchCard, aemFragmentMapping) {
 
     linkElement.classList.remove('accent', 'primary', 'secondary');
 
+    // Resolve aria-label: prefer explicit attribute, fall back to Milo pipe convention.
+    let ariaLabel = linkElement.getAttribute('aria-label') || '';
+    if (!ariaLabel) {
+        const pipeIndex = linkElement.textContent.lastIndexOf('|');
+        if (pipeIndex !== -1) {
+            const label = linkElement.textContent.slice(pipeIndex + 1).trim();
+            if (label) {
+                ariaLabel = label;
+                // Strip the pipe-delimited suffix from the visible text.
+                const visibleText = linkElement.textContent
+                    .slice(0, pipeIndex)
+                    .trim();
+                linkElement.textContent = visibleText;
+            }
+        }
+    }
+
     let newButtonElement;
 
     if (merchCard.consonant) {
@@ -517,6 +534,9 @@ function transformLinkToButton(linkElement, merchCard, aemFragmentMapping) {
                       variant,
                       isCheckoutLink,
                   );
+    }
+    if (ariaLabel) {
+        newButtonElement.setAttribute('aria-label', ariaLabel);
     }
     return newButtonElement;
 }

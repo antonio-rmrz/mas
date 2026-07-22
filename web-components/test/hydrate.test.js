@@ -368,6 +368,69 @@ describe('processCTAs', async () => {
         const footer = getFooterElement(merchCard);
         expect(footer.children).to.have.lengthOf(2);
     });
+
+    it('should set aria-label from pipe-delimited text and strip pipe suffix from visible text (spectrum css)', async () => {
+        const fields = {
+            ctas: '<a href="#" class="accent">Free trial | Free trial for Creative Cloud Pro</a>',
+        };
+        processCTAs(fields, merchCard, aemFragmentMapping);
+        const footer = getFooterElement(merchCard);
+        const button = footer.firstChild;
+        expect(button.getAttribute('aria-label')).to.equal(
+            'Free trial for Creative Cloud Pro',
+        );
+        expect(button.textContent).to.not.include('|');
+        expect(button.textContent).to.include('Free trial');
+    });
+
+    it('should set aria-label from pipe-delimited text on swc sp-button', async () => {
+        const fields = {
+            ctas: '<a href="#" class="accent">Free trial | Free trial for Creative Cloud Pro</a>',
+        };
+        merchCard.spectrum = 'swc';
+        processCTAs(fields, merchCard, aemFragmentMapping);
+        const footer = getFooterElement(merchCard);
+        const button = footer.firstChild;
+        expect(button.tagName.toLowerCase()).to.equal('sp-button');
+        expect(button.getAttribute('aria-label')).to.equal(
+            'Free trial for Creative Cloud Pro',
+        );
+    });
+
+    it('should set aria-label from pipe-delimited text on consonant button', async () => {
+        merchCard.consonant = true;
+        const fields = {
+            ctas: '<a href="#" class="accent">Free trial | Free trial for Creative Cloud Pro</a>',
+        };
+        processCTAs(fields, merchCard, aemFragmentMapping);
+        const footer = getFooterElement(merchCard);
+        const button = footer.firstChild;
+        expect(button.getAttribute('aria-label')).to.equal(
+            'Free trial for Creative Cloud Pro',
+        );
+    });
+
+    it('should preserve explicit aria-label attribute on source link', async () => {
+        const fields = {
+            ctas: '<a href="#" class="accent" aria-label="Free trial for Photoshop">Free trial</a>',
+        };
+        processCTAs(fields, merchCard, aemFragmentMapping);
+        const footer = getFooterElement(merchCard);
+        const button = footer.firstChild;
+        expect(button.getAttribute('aria-label')).to.equal(
+            'Free trial for Photoshop',
+        );
+    });
+
+    it('should not add aria-label when neither attribute nor pipe label is present', async () => {
+        const fields = {
+            ctas: '<a href="#" class="accent">Free trial</a>',
+        };
+        processCTAs(fields, merchCard, aemFragmentMapping);
+        const footer = getFooterElement(merchCard);
+        const button = footer.firstChild;
+        expect(button.hasAttribute('aria-label')).to.be.false;
+    });
 });
 
 describe('processSubtitle', () => {
