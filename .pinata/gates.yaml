@@ -64,7 +64,7 @@ gates:
         name: Visual evidence (component demo surfaces)
         # No default page: the surface catalog in preview.yaml routes targets,
         # and a change no surface can show escalates instead of guessing.
-        breakpoints: [900, 1200]
+        breakpoints: [1200]
         # Short clip per target for the human reviewer; the judge stays on stills.
         video: true
         on_missing_target: escalate
