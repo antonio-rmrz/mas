@@ -87,4 +87,6 @@ gates:
             Independent-model review of the diff before merge, required by the
             acom org floor. Skips honestly when no adversary model is reachable.
         blocking: true
-        failure_route: escalate_to_human
+        # Follow the floor's 2026-07-06 posture: bounded producer rebuild with the
+        # concerns as feedback, human review only at round exhaustion.
+        failure_route: regenerate

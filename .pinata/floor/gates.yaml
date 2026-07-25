@@ -21,4 +21,12 @@ gates:
             Binds every acom product; tenants may tighten but not drop it. Skips
             honestly when no adversary model is reachable in dev.
         blocking: true
-        failure_route: escalate_to_human
+        # TODO(operator, temporary — 2026-07-06): loosened from `escalate_to_human`
+        # to `regenerate` so an adversary failure re-enters codegen for a bounded
+        # producer rebuild (regeneration.max_candidates) with the concerns as feedback,
+        # escalating to a human only at round exhaustion — instead of stopping on the
+        # first failure. This is an INV-6 TCB change made under explicit operator
+        # authority (the loop itself may not make it). It only RELAXES the floor
+        # (tenants may still tighten to escalate_to_human); revisit the round budget
+        # and re-tighten as the loop earns trust.
+        failure_route: regenerate
