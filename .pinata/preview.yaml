@@ -12,18 +12,32 @@ overlay_pattern: 'https://main--mas--adobecom.aem.page{page}?maslibs={branch}--m
 # worktree. Port 3000 is what maslibs=local resolves to in consumer bootstraps.
 # Galleries hydrate from prod services (mas/io, WCS) so they render fully here.
 local:
-    cmd: 'aem up --port=3000 --no-open --stop-other --url https://main--mas--adobecom.aem.page'
-    url: 'http://localhost:3000{page}'
+    # Studio's author proxy runs alongside aem up. proxy:stage points it at the
+    # stage author, so automated captures never read or write production content,
+    # and PROXY_PORT moves it off 8080 where the harness gateway already listens.
+    # The until-loop serializes readiness: the harness only polls port 3000, so a
+    # proxy that never binds would otherwise leave aem up healthy and the promotions
+    # view rendering an empty list, which photographs as real evidence.
+    cmd: 'PROXY_PORT=8091 npm --prefix studio run proxy:stage & until curl -s -o /dev/null -X OPTIONS http://127.0.0.1:8091/; do sleep 0.5; done; aem up --port=3000 --no-open --stop-other --url https://main--mas--adobecom.aem.page'
+    # proxy.port tells studio.html which author proxy to call; galleries ignore it.
+    url: 'http://localhost:3000{page}?proxy.port=8091'
     # Foreign consumer pages stay remote on the public content host and pull
-    # web components from this server via maslibs=local.
+    # web components from this server via maslibs=local. studio.html is listed as
+    # an own host instead: it loads its code by relative path, so only serving it
+    # from here shows the candidate build. maslibs would be a no-op for it.
     consumer_overlay:
-        own_hosts: ['--mas--']
+        own_hosts: ['--mas--', 'mas.adobe.com']
         params: 'maslibs=local&martech=off'
 
 # Hosts that carry mas pages when a requester pastes a URL: studio deep links
 # and da-cc consumer pages in practice. Live URLs capture on the .page host.
 capture_hosts:
     - '--mas--adobecom.aem.page'
+    # Studio deep links are pasted on the production domain. Without this entry
+    # the URL is dropped and the gate has nothing to capture. The page is served
+    # from the local worktree (own_hosts above), so production is never shot.
+    - host: 'mas.adobe.com'
+      auth: ims
     - host: '--da-cc--adobecom.aem.page'
       auth: da-cc-token
     - host: '--mas--adobecom.aem.live'
