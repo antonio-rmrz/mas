@@ -45,7 +45,9 @@ gates:
         cmd: npm test
         timeout_s: 600
         blocking: true
-        failure_route: repair_loop
+        # Test failures usually need files outside the one-file repair boundary
+        # (e.g. a store signal the tests expect), so send them back to the producer.
+        failure_route: regenerate
 
     dist-sync:
         template: command
