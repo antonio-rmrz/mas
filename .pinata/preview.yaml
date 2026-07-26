@@ -61,9 +61,14 @@ auth_profiles:
               value_from: username
               timeout_ms: 45000
             - click: '[data-id=EmailPage-ContinueButton]'
+            # IMS sometimes ignores Continue: redo email+Continue until the password page shows; toaster = account rejected.
             - fill: '#PasswordPage-PasswordField'
               value_from: password
               timeout_ms: 60000
+              retry_previous: 2
+              retry_interval_ms: 1000
+              retry_max_replays: 4
+              abort_on: ['[data-id=EmailPage-Toaster]']
             - click: '[data-id=PasswordPage-ContinueButton]'
             # Profile chooser and passkey nudge are interstitials; skip if absent.
             - click: '[data-id="PP-ProfileChooser-AuthAccount"]'
