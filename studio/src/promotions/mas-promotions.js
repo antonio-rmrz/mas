@@ -3,9 +3,9 @@ import { repeat } from 'lit/directives/repeat.js';
 import Store from '../store.js';
 import { MasRepository } from '../mas-repository.js';
 import styles from './mas-promotions-css.js';
-import { PAGE_NAMES, PROMOTION_MODEL_ID } from '../constants.js';
+import { PAGE_NAMES, PROMOTION_MODEL_ID, SURFACES } from '../constants.js';
 import ReactiveController from '../reactivity/reactive-controller.js';
-import { normalizeKey, showToast } from '../utils.js';
+import { normalizeKey, showToast, extractSurfaceFromPath } from '../utils.js';
 import { clearCaches } from '../../libs/fragment-client.js';
 import './mas-promotion-duplicate-dialog.js';
 import { renderPromotionStatusCell } from '../common/utils/render-utils.js';
@@ -18,7 +18,7 @@ import {
     publishPromotionProject,
     PROMOTION_EXPIRED_PUBLISH_MESSAGE,
 } from './promotion-publish-utils.js';
-import { PROMOTION_FIELD_TYPE_MAP } from './promotion-editor-utils.js';
+import { PROMOTION_FIELD_TYPE_MAP, parsePromotionSurfacesFieldValues } from './promotion-editor-utils.js';
 
 class MasPromotions extends LitElement {
     static styles = styles;
@@ -35,6 +35,7 @@ class MasPromotions extends LitElement {
         confirmDialogConfig: { type: Object, state: true },
         duplicateDialogOpen: { type: Boolean, state: true },
         duplicating: { type: Boolean, state: true },
+        surfaceFilter: { type: Array, state: true },
     };
 
     constructor() {
@@ -51,12 +52,14 @@ class MasPromotions extends LitElement {
         this.confirmDialogConfig = null;
         this.duplicateDialogOpen = false;
         this.duplicating = false;
+        this.surfaceFilter = this.#surfaceFilterFromStore();
         this.reactiveController = new ReactiveController(this, [
             Store.promotions?.list?.data,
             Store.promotions?.list?.loading,
             Store.promotions?.list?.filter,
             Store.promotions?.list?.filterOptions,
             Store.users,
+            Store.filters,
         ]);
     }
 
@@ -83,8 +86,15 @@ class MasPromotions extends LitElement {
         return repository;
     }
 
+    #onFiltersChange = () => {
+        this.#syncSurfaceFilterFromStore();
+    };
+
     async connectedCallback() {
         super.connectedCallback();
+
+        this.#syncSurfaceFilterFromStore();
+        Store.filters.subscribe(this.#onFiltersChange);
 
         const currentPage = Store.page.get();
         if (currentPage !== PAGE_NAMES.PROMOTIONS) {
@@ -104,6 +114,7 @@ class MasPromotions extends LitElement {
 
     disconnectedCallback() {
         super.disconnectedCallback();
+        Store.filters.unsubscribe(this.#onFiltersChange);
     }
 
     renderError() {
@@ -177,9 +188,49 @@ class MasPromotions extends LitElement {
         return this.renderPromotionsTable();
     }
 
+    #surfaceFilterFromStore() {
+        const tags = Store.filters.get()?.tags;
+        if (!tags) return [];
+        return tags
+            .split(',')
+            .filter((t) => t.startsWith('mas:surface/'))
+            .map((t) => t.replace('mas:surface/', ''));
+    }
+
+    #syncSurfaceFilterFromStore() {
+        const next = this.#surfaceFilterFromStore();
+        const current = this.surfaceFilter || [];
+        if (current.length === next.length && current.every((v, i) => v === next[i])) return;
+        this.surfaceFilter = next;
+    }
+
+    #writeSurfaceFilterToStore(surfaces) {
+        Store.filters.set((prev) => {
+            const currentTags = (prev?.tags ?? '').split(',').filter((t) => t && !t.startsWith('mas:surface/'));
+            const newSurfaceTags = surfaces.map((s) => `mas:surface/${s}`);
+            const merged = [...currentTags, ...newSurfaceTags].filter(Boolean);
+            return { ...prev, tags: merged.join(',') || undefined };
+        });
+    }
+
+    #getPromotionSurfaces(promo) {
+        const rawValues = promo.fields?.find((f) => f.name === 'surfaces')?.values ?? [];
+        const fromField = parsePromotionSurfacesFieldValues(rawValues);
+        if (fromField.length) return fromField;
+        const fromPath = extractSurfaceFromPath(promo.path);
+        return fromPath ? [fromPath] : [];
+    }
+
     renderPromotionsTable() {
         this.#handleFilterPromotions(this.filter);
-        const filteredPromotions = this.promotionsData;
+        let filteredPromotions = this.promotionsData;
+
+        if (this.surfaceFilter?.length > 0) {
+            filteredPromotions = filteredPromotions.filter((promotion) => {
+                const surfaces = this.#getPromotionSurfaces(promotion.get());
+                return this.surfaceFilter.some((s) => surfaces.includes(s));
+            });
+        }
 
         const columns = [
             { key: 'title', label: 'Promotion' },
@@ -196,6 +247,7 @@ class MasPromotions extends LitElement {
                 key: 'createdBy',
                 label: 'Owner',
             },
+            { key: 'surfaces', label: 'Surfaces' },
             { key: 'actions', label: 'Actions', align: 'center' },
         ];
 
@@ -213,6 +265,10 @@ class MasPromotions extends LitElement {
                 <sp-table-body>
                     ${repeat(filteredPromotions, (promotion) => {
                         const promo = promotion.get();
+                        const surfaceNames = this.#getPromotionSurfaces(promo);
+                        const surfaceLabels = surfaceNames
+                            .map((name) => Object.values(SURFACES).find((s) => s.name === name)?.label ?? name)
+                            .join(', ');
                         return html`
                             <sp-table-row
                                 value=${promo.path}
@@ -228,6 +284,7 @@ class MasPromotions extends LitElement {
                                 </sp-table-cell>
                                 ${renderPromotionStatusCell(promo.promotionStatus)}
                                 <sp-table-cell>${promo.createdBy}</sp-table-cell>
+                                <sp-table-cell>${surfaceLabels}</sp-table-cell>
                                 ${this.renderActionCell(promotion)}
                             </sp-table-row>
                         `;
@@ -239,6 +296,50 @@ class MasPromotions extends LitElement {
 
     willUpdate() {
         this.canEdit = canEditPromotions();
+    }
+
+    get #surfaceOptions() {
+        return Object.values(SURFACES).map((s) => ({ id: s.name, label: s.label }));
+    }
+
+    #renderSurfaceFilter() {
+        const options = this.#surfaceOptions;
+        const selectedCount = (this.surfaceFilter || []).length;
+        const label = selectedCount > 0 ? `Surface (${selectedCount})` : 'Surface';
+        return html`
+            <overlay-trigger placement="bottom-start">
+                <sp-action-button slot="trigger">
+                    ${label}
+                    <sp-icon-chevron-down slot="icon"></sp-icon-chevron-down>
+                </sp-action-button>
+                <sp-popover slot="click-content" class="filter-popover">
+                    <div class="checkbox-list">
+                        ${options.map(
+                            (opt) => html`
+                                <sp-checkbox
+                                    value=${opt.id}
+                                    ?checked=${(this.surfaceFilter || []).includes(opt.id)}
+                                    @change=${(e) => {
+                                        e.stopPropagation();
+                                        const current = [...(this.surfaceFilter || [])];
+                                        if (e.target.checked) {
+                                            if (!current.includes(opt.id)) current.push(opt.id);
+                                        } else {
+                                            const idx = current.indexOf(opt.id);
+                                            if (idx !== -1) current.splice(idx, 1);
+                                        }
+                                        this.surfaceFilter = current;
+                                        this.#writeSurfaceFilterToStore(current);
+                                    }}
+                                >
+                                    ${opt.label}
+                                </sp-checkbox>
+                            `,
+                        )}
+                    </div>
+                </sp-popover>
+            </overlay-trigger>
+        `;
     }
 
     render() {
@@ -286,7 +387,10 @@ class MasPromotions extends LitElement {
                 ></mas-promotion-duplicate-dialog>
 
                 <div class="promotions-filters-container">
-                    <div class="filters-container"><sp-icon-filter></sp-icon-filter><span>Filters:</span></div>
+                    <div class="filters-container">
+                        <sp-icon-filter></sp-icon-filter><span>Filters:</span>
+                        ${this.#renderSurfaceFilter()}
+                    </div>
                     <div class="result-count-container">${(this.promotionsData || []).length} results</div>
                 </div>
 
