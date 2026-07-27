@@ -51,6 +51,9 @@ auth_profiles:
     da-cc-token:
         token_env: AEM_SITE_TOKEN_DA_CC
         header: 'authorization: token {token}'
+        # expired token self-heals: the engine re-mints via the ims login in-run
+        mint:
+            login: ims
     ims:
         account:
             username: cod23684+masautomation@adobetest.com
