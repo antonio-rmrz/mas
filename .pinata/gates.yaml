@@ -17,6 +17,17 @@ generated:
 provision: npm ci
 
 gates:
+    lockfiles:
+        template: protected_paths
+        name: Dependency lockfiles
+        # An npm install during a code change rewrites these as a side effect.
+        # Dependency bumps are their own ticket.
+        paths:
+            - 'package-lock.json'
+            - '*/package-lock.json'
+        blocking: true
+        failure_route: escalate_to_human
+
     lint:
         template: command
         name: ESLint (changed files)
