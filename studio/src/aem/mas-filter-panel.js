@@ -24,6 +24,7 @@ const EMPTY_TAGS = {
     'studio/content-type': [],
     custom: [],
     variant: [],
+    surface: [],
 };
 
 class MasFilterPanel extends LitElement {
