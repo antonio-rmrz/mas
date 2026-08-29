@@ -1667,7 +1667,8 @@ class RteField extends LitElement {
 
     #updateLength() {
         if (this.editorView && this.editorView.dom) {
-            this.length = this.editorView.dom.innerText.length;
+            const text = this.editorView.dom.innerText.replace(/\n$/, '');
+            this.length = text.length;
         }
     }
 
