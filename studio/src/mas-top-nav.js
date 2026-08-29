@@ -46,6 +46,10 @@ class MasTopNav extends LitElement {
     createRenderRoot() {
         return this;
     }
+
+    get navTitleStyle() {
+        return 'text-transform: uppercase;';
+    }
     async profileBuilder() {
         try {
             const accessToken = window.adobeIMS.getAccessToken();
